@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Musa — Dashboard Natala</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0d0a1a;
+    color: #e8e0f0;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .header {
+    text-align: center;
+    padding: 30px 0;
+    border-bottom: 1px solid #2a1f4e;
+    margin-bottom: 30px;
+  }
+  .header h1 {
+    font-size: 2em;
+    background: linear-gradient(135deg, #d4af37, #f5e6a3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header .date { color: #9b8ec4; margin-top: 8px; font-size: 1.1em; }
+  .header .astro { color: #7b6fa0; margin-top: 4px; font-size: 0.9em; }
+  .post-card {
+    background: #16112a;
+    border: 1px solid #2a1f4e;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .post-card .label {
+    color: #d4af37;
+    font-weight: bold;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .post-card img, .post-card video {
+    width: 100%;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .caption {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    font-size: 0.95em;
+  }
+  .hashtags {
+    color: #9b8ec4;
+    font-size: 0.85em;
+    word-break: break-all;
+    margin-bottom: 16px;
+  }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-copy {
+    background: #2a1f4e;
+    color: #d4af37;
+  }
+  .btn-copy:hover { background: #3d2d6b; }
+  .btn-copy.copied { background: #1a4a2a; color: #5eff8a; }
+  .btn-download {
+    background: #d4af37;
+    color: #0d0a1a;
+  }
+  .btn-download:hover { background: #f5e6a3; }
+  .video-section {
+    max-width: 600px;
+    margin: 0 auto 24px;
+    text-align: center;
+  }
+  .video-section h2 {
+    color: #d4af37;
+    margin-bottom: 16px;
+  }
+  .empty {
+    text-align: center;
+    color: #7b6fa0;
+    padding: 60px 20px;
+    font-size: 1.1em;
+  }
+  @media (max-width: 640px) {
+    body { padding: 12px; }
+    .post-card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>✨ Musa — Natala ✨</h1>
+  <div class="date" id="date">Cargando...</div>
+  <div class="astro" id="astro"></div>
+</div>
+<div id="content"></div>
+
+<script>
+async function load() {
+  try {
+    const res = await fetch('data.json');
+    if (!res.ok) throw new Error('No data');
+    const data = await res.json();
+    render(data);
+  } catch (e) {
+    document.getElementById('content').innerHTML = '<div class="empty">🔮 No hay contenido generado aún.<br>Ejecuta <code>npm run generate</code></div>';
+  }
+}
+
+function render(data) {
+  document.getElementById('date').textContent = `📅 ${data.date}`;
+  if (data.summary) {
+    const s = data.summary.astro;
+    document.getElementById('astro').textContent =
+      `${s.moon?.phaseName || ''} ${s.moon?.phaseEmoji || ''} en ${s.moon?.moonSign || ''} · ☀️ ${s.sunSign || ''} · ${s.energy || ''}`;
+  }
+
+  let html = '';
+
+  for (const post of data.posts) {
+    html += `<div class="post-card">
+      <div class="label">${post.id.replace('-', ' ').toUpperCase()}</div>`;
+
+    if (post.imageBase64) {
+      html += `<img src="${post.imageBase64}" alt="${post.id}">`;
+    } else if (post.image) {
+      html += `<img src="${post.image}" alt="${post.id}">`;
+    }
+
+    if (post.caption) {
+      html += `<div class="caption">${esc(post.caption)}</div>`;
+    }
+    if (post.hashtags) {
+      html += `<div class="hashtags">${esc(post.hashtags)}</div>`;
+    }
+
+    html += `<div class="actions">`;
+    if (post.caption) {
+      html += `<button class="btn btn-copy" onclick="copyText(this, ${JSON.stringify(JSON.stringify(post.caption + '\\n\\n' + (post.hashtags || '')))})">📋 Copiar caption</button>`;
+    }
+    if (post.image) {
+      html += `<a class="btn btn-download" href="${post.imageBase64 || post.image}" download="${post.id}.png">⬇️ Descargar imagen</a>`;
+    }
+    html += `</div></div>`;
+  }
+
+  if (data.video) {
+    html += `<div class="video-section"><h2>🎬 Video del día</h2>
+      <div class="post-card">
+        <video controls src="${data.video.path}"></video>
+        <div class="actions">
+          <a class="btn btn-download" href="${data.video.path}" download="video.mp4">⬇️ Descargar video</a>
+        </div>
+      </div></div>`;
+  }
+
+  if (!data.posts.length && !data.video) {
+    html = '<div class="empty">🔮 No hay contenido para hoy</div>';
+  }
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function copyText(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 Copiar caption'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+load();
+</script>
+</body>
+</html>

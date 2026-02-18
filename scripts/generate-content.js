@@ -12,6 +12,8 @@ const path = require('path');
 const { getTodayAstroData, getRandomSign, getTwoSigns, getRandomTarotCard } = require('./astro-data');
 const { pickDailyContent, buildPrompt, buildImagePrompt, getHashtags } = require('./templates');
 const { generateImage } = require('./generate-images');
+const { generateVideo } = require('./generate-videos');
+const { buildDashboard } = require('./build-dashboard');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -120,7 +122,24 @@ async function main() {
     console.log(`\n${r.hashtags}`);
   }
 
+  // Generate video (1 per day)
+  console.log('\n🎬 Generando video...');
+  try {
+    await generateVideo(outputDir);
+  } catch (error) {
+    console.error(`❌ Video error: ${error.message}`);
+  }
+
+  // Build dashboard
+  console.log('\n📊 Construyendo dashboard...');
+  try {
+    buildDashboard(dateStr);
+  } catch (error) {
+    console.error(`❌ Dashboard error: ${error.message}`);
+  }
+
   console.log(`\n📁 Output: ${outputDir}`);
+  console.log(`🌐 Dashboard: dashboard/index.html`);
 }
 
 main().catch(err => {
