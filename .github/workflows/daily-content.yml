@@ -1,0 +1,32 @@
+name: Daily Musa Content Generation
+
+on:
+  schedule:
+    - cron: '0 11 * * *'  # 6am Colombia (UTC-5)
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - name: Generate content
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/generate-content.js
+
+      - name: Commit and push
+        run: |
+          git config user.name "Musa Bot"
+          git config user.email "musa@natala.online"
+          git add output/
+          git commit -m "🌙 Content $(date +%Y-%m-%d)" || true
+          git push
