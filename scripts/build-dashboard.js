@@ -11,7 +11,7 @@ const today = new Date().toISOString().split('T')[0];
 function buildDashboard(dateStr) {
   dateStr = dateStr || today;
   const outputDir = path.join(__dirname, '..', 'output', dateStr);
-  const dashDir = path.join(__dirname, '..', 'dashboard');
+  const dashDir = path.join(__dirname, '..', 'docs');
   const assetsDir = path.join(dashDir, 'assets');
 
   fs.mkdirSync(assetsDir, { recursive: true });
@@ -50,7 +50,7 @@ function buildDashboard(dateStr) {
     }
 
     // Image — copy to assets and store relative path
-    const imgPath = path.join(postDir, 'image.png');
+    const imgPath = path.join(postDir, 'image.webp');
     const svgPath = path.join(postDir, 'image.svg');
     if (fs.existsSync(imgPath)) {
       const dest = path.join(assetsDir, `${entry}.png`);

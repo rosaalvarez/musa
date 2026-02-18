@@ -57,7 +57,7 @@ async function generatePost(type, index, astroData) {
     moonPhase: astroData.moon.phaseName,
   });
   console.log(`  🎨 Generating image...`);
-  await generateImage(imagePrompt, path.join(postDir, 'image.png'));
+  await generateImage(imagePrompt, path.join(postDir, 'image.webp'));
 
   return { type, topic, caption, hashtags };
 }
@@ -139,7 +139,7 @@ async function main() {
   }
 
   console.log(`\n📁 Output: ${outputDir}`);
-  console.log(`🌐 Dashboard: dashboard/index.html`);
+  console.log(`🌐 Dashboard: docs/index.html`);
 }
 
 main().catch(err => {
