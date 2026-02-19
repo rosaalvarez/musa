@@ -164,27 +164,125 @@ Formato: Advertencia dramática → Qué significa → Cómo sobrevivir`;
 }
 
 /**
- * Build image prompt for Gemini
+ * Build background image prompt for FLUX (9:16 vertical, NO text)
+ * These are JUST backgrounds — text gets overlaid by compose-image.js
  */
 function buildImagePrompt(type, extras = {}) {
-  const baseStyle = 'Mystical dark purple and gold aesthetic, ethereal glow, magical atmosphere, high quality digital art for social media';
+  const baseStyle = 'Dark mystical background, no text, no words, no letters, no writing, cinematic lighting, high quality digital art, vertical portrait orientation';
+
+  // Varied background pools for each type
+  const bgVariants = {
+    horoscopo: [
+      `${baseStyle}. Cosmic galaxy with golden nebula and bright stars, deep space, dark blue and purple tones, ethereal glow`,
+      `${baseStyle}. Mystical fire horse galloping through dark cosmos, golden flames, sparks and embers, epic dramatic`,
+      `${baseStyle}. Dark night sky with aurora borealis in purple and gold, mountains silhouette, magical atmosphere`,
+      `${baseStyle}. Golden zodiac wheel spinning in dark cosmic void, glowing constellations, mystical energy`,
+      `${baseStyle}. Dramatic sunset over dark ocean, golden and purple clouds, mystical spiritual atmosphere`,
+    ],
+    carta_del_dia: [
+      `${baseStyle}. Mystical dark altar with glowing candles, purple smoke, golden light rays from above, tarot aesthetic`,
+      `${baseStyle}. Dark cosmic void with golden dust particles floating, single beam of divine light, mystical`,
+      `${baseStyle}. Crystal cave with purple amethyst crystals glowing, golden light reflections, magical underground`,
+      `${baseStyle}. Dark forest at night with fireflies and golden moonlight filtering through trees, enchanted`,
+    ],
+    fase_lunar: [
+      `${baseStyle}. Giant ${extras.moonPhase || 'full moon'} over dark ocean, golden reflection on water, mystical clouds`,
+      `${baseStyle}. ${extras.moonPhase || 'Full moon'} in dark purple sky surrounded by golden sparkles and cosmic dust`,
+      `${baseStyle}. Dark night ritual scene, moonlight illuminating crystals and candles, purple and gold tones`,
+      `${baseStyle}. Massive moon rising behind dark mountain, golden light, stars, cosmic atmosphere`,
+    ],
+    dolor_post: [
+      `${baseStyle}. Dark stormy sky breaking into golden light, dramatic clouds, hope emerging from darkness`,
+      `${baseStyle}. Silhouette of person standing before vast cosmic galaxy, golden stars, emotional cinematic`,
+      `${baseStyle}. Dark ocean waves with golden bioluminescence, dramatic sky, emotional atmosphere`,
+      `${baseStyle}. Phoenix rising from dark ashes with golden fire, rebirth, dramatic cosmic background`,
+    ],
+    signo_vs_signo: [
+      `${baseStyle}. Two opposing cosmic energies colliding, fire and ice, gold and purple, dramatic explosion`,
+      `${baseStyle}. Lightning storm in dark cosmic space, golden and purple energy clashing, dramatic power`,
+      `${baseStyle}. Dark cosmic arena with two nebulae facing each other, golden sparks between them`,
+    ],
+    transitos: [
+      `${baseStyle}. Planets aligned in dark cosmic space, golden orbital trails, cosmic geometry, dramatic`,
+      `${baseStyle}. Dark cosmic storm with swirling golden energy, planets in retrograde, dramatic atmosphere`,
+      `${baseStyle}. Cosmic vortex in deep space, dark purple and gold, swirling star trails, dramatic`,
+    ],
+  };
+
+  const variants = bgVariants[type] || bgVariants.horoscopo;
+  return variants[Math.floor(Math.random() * variants.length)];
+}
+
+/**
+ * Build the SHORT text that goes INSIDE the image (max 3-4 lines, hook potente)
+ * Returns { headline, bodyLines, signName, signEmoji }
+ */
+function buildImageText(type, extras = {}, astroData = {}) {
+  let headline = '';
+  let bodyLines = [];
+  let signName = null;
+  let signEmoji = null;
 
   switch (type) {
-    case 'horoscopo':
-      return `${baseStyle}. Zodiac symbol for ${extras.sign?.name || 'Aries'} glowing in gold against deep purple cosmic background with stars and nebula. Elegant and mystical. Square format 1080x1080.`;
-    case 'carta_del_dia':
-      return `${baseStyle}. A single tarot card "${extras.card?.name || 'The Moon'}" floating in cosmic purple space, glowing golden edges, mystical smoke around it, dramatic lighting. Square format 1080x1080.`;
-    case 'fase_lunar':
-      return `${baseStyle}. ${extras.moonPhase || 'Full moon'} glowing bright in deep purple night sky, surrounded by golden stars, crystals and candles at the bottom, ethereal and magical. Square format 1080x1080.`;
-    case 'dolor_post':
-      return `${baseStyle}. A broken golden heart floating in cosmic purple space, with healing light emanating from the cracks, stars and cosmic dust surrounding it, emotional and beautiful. Square format 1080x1080.`;
-    case 'signo_vs_signo':
-      return `${baseStyle}. Two zodiac symbols facing each other with lightning between them, cosmic battle in purple and gold, dramatic and powerful energy. Square format 1080x1080.`;
-    case 'transitos':
-      return `${baseStyle}. Planet Mercury glowing in retrograde motion path against deep purple cosmos, warning energy, swirling golden cosmic trails, dramatic atmosphere. Square format 1080x1080.`;
+    case 'horoscopo': {
+      const sign = extras.sign;
+      signName = sign?.name || 'Aries';
+      signEmoji = sign?.emoji || '♈';
+      const hooks = [
+        'El universo tiene un mensaje para ti hoy',
+        'Lo que viene para ti nadie lo espera',
+        'Hoy todo cambia para ti',
+        'No ignores esta señal',
+        'El cosmos habla, ¿estás escuchando?',
+      ];
+      headline = hooks[Math.floor(Math.random() * hooks.length)];
+      break;
+    }
+    case 'carta_del_dia': {
+      const card = extras.card;
+      headline = 'Tu carta del día no es coincidencia';
+      bodyLines = [card?.name || 'El Loco'];
+      break;
+    }
+    case 'fase_lunar': {
+      const moon = astroData.moon || {};
+      signEmoji = moon.phaseEmoji || '🌙';
+      headline = `${moon.phaseName || 'Luna Nueva'}`;
+      bodyLines = [
+        `en ${moon.moonSign || 'Piscis'}`,
+        'Lo que hagas hoy define tu mes entero',
+      ];
+      break;
+    }
+    case 'dolor_post': {
+      const dolorHooks = [
+        'Si estás leyendo esto,\nno es casualidad',
+        'El universo te puso\neste mensaje por algo',
+        'Esto es para ti,\naunque no lo creas',
+        'Lo que perdiste\nva a volver multiplicado',
+      ];
+      headline = dolorHooks[Math.floor(Math.random() * dolorHooks.length)];
+      break;
+    }
+    case 'signo_vs_signo': {
+      const [s1, s2] = extras.signs || [{ name: 'Escorpio', emoji: '♏' }, { name: 'Géminis', emoji: '♊' }];
+      headline = `${s1.name} ${s1.emoji} vs ${s2.name} ${s2.emoji}`;
+      bodyLines = ['¿Quién gana en el amor?'];
+      break;
+    }
+    case 'transitos': {
+      const planets = astroData.retrogradeList?.length > 0
+        ? astroData.retrogradeList.join(' y ')
+        : 'Mercurio';
+      headline = `${planets} Retrógrado`;
+      bodyLines = ['Lo que NADIE te dice'];
+      break;
+    }
     default:
-      return `${baseStyle}. Crystal ball glowing with purple and gold light, tarot cards scattered around, mystical smoke, cosmic background. Square format 1080x1080.`;
+      headline = 'El universo tiene un mensaje para ti';
   }
+
+  return { headline, bodyLines, signName, signEmoji, watermark: 'natala.online' };
 }
 
 module.exports = {
@@ -195,4 +293,5 @@ module.exports = {
   getHashtags,
   buildPrompt,
   buildImagePrompt,
+  buildImageText,
 };

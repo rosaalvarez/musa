@@ -23,7 +23,7 @@ async function generateImage(prompt, outputPath) {
     const output = await replicate.run('black-forest-labs/flux-schnell', {
       input: {
         prompt,
-        aspect_ratio: '1:1',
+        aspect_ratio: '9:16',
         num_outputs: 1,
         output_format: 'webp',
         output_quality: 90,

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * build-dashboard.js — Build dashboard data from today's generated content
+ * build-dashboard.js — Build dashboard data from today's generated content (v2)
  */
 
 const fs = require('fs');
@@ -21,7 +21,7 @@ function buildDashboard(dateStr) {
     return;
   }
 
-  const data = { date: dateStr, posts: [], video: null };
+  const data = { date: dateStr, piezas: [], video: null };
 
   // Read summary if exists
   const summaryPath = path.join(outputDir, 'summary.json');
@@ -29,42 +29,56 @@ function buildDashboard(dateStr) {
     data.summary = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
   }
 
-  // Process posts
-  const entries = fs.readdirSync(outputDir).filter(e => e.startsWith('post-')).sort();
-  for (const entry of entries) {
-    const postDir = path.join(outputDir, entry);
-    if (!fs.statSync(postDir).isDirectory()) continue;
+  // Read pack if exists
+  const packPath = path.join(outputDir, 'pack.json');
+  if (fs.existsSync(packPath)) {
+    data.pack = JSON.parse(fs.readFileSync(packPath, 'utf-8'));
+  }
 
-    const post = { id: entry };
+  // Process piezas (new structure: pieza-01, pieza-02, etc.)
+  const entries = fs.readdirSync(outputDir)
+    .filter(e => e.startsWith('pieza-') || e.startsWith('post-'))
+    .sort();
+
+  for (const entry of entries) {
+    const pieceDir = path.join(outputDir, entry);
+    if (!fs.statSync(pieceDir).isDirectory()) continue;
+
+    const piece = { id: entry };
+
+    // Metadata
+    const metaPath = path.join(pieceDir, 'metadata.json');
+    if (fs.existsSync(metaPath)) {
+      piece.metadata = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+    }
 
     // Caption
-    const captionPath = path.join(postDir, 'caption.txt');
+    const captionPath = path.join(pieceDir, 'caption.txt');
     if (fs.existsSync(captionPath)) {
-      post.caption = fs.readFileSync(captionPath, 'utf-8');
+      piece.caption = fs.readFileSync(captionPath, 'utf-8');
     }
 
     // Hashtags
-    const hashPath = path.join(postDir, 'hashtags.txt');
+    const hashPath = path.join(pieceDir, 'hashtags.txt');
     if (fs.existsSync(hashPath)) {
-      post.hashtags = fs.readFileSync(hashPath, 'utf-8');
+      piece.hashtags = fs.readFileSync(hashPath, 'utf-8');
     }
 
-    // Image — copy to assets and store relative path
-    const imgPath = path.join(postDir, 'image.webp');
-    const svgPath = path.join(postDir, 'image.svg');
+    // Guion
+    const guionPath = path.join(pieceDir, 'guion.txt');
+    if (fs.existsSync(guionPath)) {
+      piece.guion = fs.readFileSync(guionPath, 'utf-8');
+    }
+
+    // Final image
+    const imgPath = path.join(pieceDir, 'image.png');
     if (fs.existsSync(imgPath)) {
       const dest = path.join(assetsDir, `${entry}.png`);
       fs.copyFileSync(imgPath, dest);
-      post.image = `assets/${entry}.png`;
-      // Also base64 for inline display
-      post.imageBase64 = 'data:image/png;base64,' + fs.readFileSync(imgPath).toString('base64');
-    } else if (fs.existsSync(svgPath)) {
-      const dest = path.join(assetsDir, `${entry}.svg`);
-      fs.copyFileSync(svgPath, dest);
-      post.image = `assets/${entry}.svg`;
+      piece.image = `assets/${entry}.png`;
     }
 
-    data.posts.push(post);
+    data.piezas.push(piece);
   }
 
   // Video
@@ -75,14 +89,10 @@ function buildDashboard(dateStr) {
     fs.copyFileSync(videoPath, dest);
     data.video = { path: 'assets/video.mp4' };
   }
-  const promptPath = path.join(videoDir, 'prompt.txt');
-  if (fs.existsSync(promptPath)) {
-    data.videoPrompt = fs.readFileSync(promptPath, 'utf-8');
-  }
 
   // Write data.json
   fs.writeFileSync(path.join(dashDir, 'data.json'), JSON.stringify(data, null, 2));
-  console.log(`✅ Dashboard data built for ${dateStr} (${data.posts.length} posts)`);
+  console.log(`✅ Dashboard data built for ${dateStr} (${data.piezas.length} piezas)`);
 }
 
 if (require.main === module) {
