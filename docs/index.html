@@ -134,9 +134,10 @@ function render(data) {
 
   let html = '';
 
-  for (const post of data.posts) {
+  const items = data.piezas || data.posts || [];
+  for (const post of items) {
     html += `<div class="post-card">
-      <div class="label">${post.id.replace('-', ' ').toUpperCase()}</div>`;
+      <div class="label">${(post.id || '').replace('-', ' ').toUpperCase()}</div>`;
 
     if (post.imageBase64) {
       html += `<img src="${post.imageBase64}" alt="${post.id}">`;
@@ -144,16 +145,18 @@ function render(data) {
       html += `<img src="${post.image}" alt="${post.id}">`;
     }
 
-    if (post.caption) {
-      html += `<div class="caption">${esc(post.caption)}</div>`;
+    const caption = post.caption || (post.metadata && post.metadata.caption) || '';
+    if (caption) {
+      html += `<div class="caption">${esc(caption)}</div>`;
     }
-    if (post.hashtags) {
-      html += `<div class="hashtags">${esc(post.hashtags)}</div>`;
+    const hashtags = post.hashtags || '';
+    if (hashtags) {
+      html += `<div class="hashtags">${esc(hashtags)}</div>`;
     }
 
     html += `<div class="actions">`;
-    if (post.caption) {
-      html += `<button class="btn btn-copy" onclick="copyText(this, ${JSON.stringify(JSON.stringify(post.caption + '\\n\\n' + (post.hashtags || '')))})">📋 Copiar caption</button>`;
+    if (caption) {
+      html += `<button class="btn btn-copy" onclick="copyText(this, ${JSON.stringify(JSON.stringify(caption + '\\n\\n' + hashtags))})">📋 Copiar caption</button>`;
     }
     if (post.image) {
       html += `<a class="btn btn-download" href="${post.imageBase64 || post.image}" download="${post.id}.png">⬇️ Descargar imagen</a>`;
@@ -162,16 +165,17 @@ function render(data) {
   }
 
   if (data.video) {
+    const vpath = data.video.path || data.video;
     html += `<div class="video-section"><h2>🎬 Video del día</h2>
       <div class="post-card">
-        <video controls src="${data.video.path}"></video>
+        <video controls src="${vpath}"></video>
         <div class="actions">
-          <a class="btn btn-download" href="${data.video.path}" download="video.mp4">⬇️ Descargar video</a>
+          <a class="btn btn-download" href="${vpath}" download="video.mp4">⬇️ Descargar video</a>
         </div>
       </div></div>`;
   }
 
-  if (!data.posts.length && !data.video) {
+  if (!items.length && !data.video) {
     html = '<div class="empty">🔮 No hay contenido para hoy</div>';
   }
 
